@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Resultado da Simulação</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #121212; color: #00ff00; }
+        .container { width: 80%; margin: auto; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Resultado da Simulação</h1>
+        <ul>
+            {% for item in result %}
+            <li>{{ item }}</li>
+            {% endfor %}
+        </ul>
+        <a href="/"><button class="button">Voltar</button></a>
+    </div>
+</body>
+</html>
