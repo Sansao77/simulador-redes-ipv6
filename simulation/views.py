@@ -25,17 +25,32 @@ def create_demo_network():
         # Criando roteadores (ou obtendo, se já existirem)
         router1, _ = Router.objects.get_or_create(name="Router1", defaults={"ipv6_address": "2001:db8:1::1"})
         router2, _ = Router.objects.get_or_create(name="Router2", defaults={"ipv6_address": "2001:db8:2::1"})
+        router3, _ = Router.objects.get_or_create(name="Router3", defaults={"ipv6_address": "2001:db8:3::1"})
+        router4, _ = Router.objects.get_or_create(name="Router4", defaults={"ipv6_address": "2001:db8:4::1"})
 
-        # Conectando roteadores, se ainda não estiverem conectados
+        # Conectando roteadores em uma topologia mais intrincada
         if not router1.connected_routers.filter(id=router2.id).exists():
             router1.connected_routers.add(router2)
-            router2.connected_routers.add(router1)
+        if not router2.connected_routers.filter(id=router3.id).exists():
+            router2.connected_routers.add(router3)
+        if not router3.connected_routers.filter(id=router4.id).exists():
+            router3.connected_routers.add(router4)
+        if not router4.connected_routers.filter(id=router1.id).exists():
+            router4.connected_routers.add(router1)
+        if not router2.connected_routers.filter(id=router4.id).exists():
+            router2.connected_routers.add(router4)  # Adicionando mais complexidade
 
-        # Criando dispositivos (ou obtendo, se já existirem)
-        device1, _ = Device.objects.get_or_create(name="Device1", defaults={"ipv6_address": "2001:db8:1::100", "connected_to": router1})
-        device2, _ = Device.objects.get_or_create(name="Device2", defaults={"ipv6_address": "2001:db8:2::100", "connected_to": router2})
+        # Criando dispositivos e associando a diferentes roteadores
+        devices = []
+        devices.append(Device.objects.get_or_create(name="Device1", defaults={"ipv6_address": "2001:db8:1::100", "connected_to": router1})[0])
+        devices.append(Device.objects.get_or_create(name="Device2", defaults={"ipv6_address": "2001:db8:2::100", "connected_to": router2})[0])
+        devices.append(Device.objects.get_or_create(name="Device3", defaults={"ipv6_address": "2001:db8:3::100", "connected_to": router3})[0])
+        devices.append(Device.objects.get_or_create(name="Device4", defaults={"ipv6_address": "2001:db8:4::100", "connected_to": router4})[0])
+        devices.append(Device.objects.get_or_create(name="Device5", defaults={"ipv6_address": "2001:db8:1::101", "connected_to": router1})[0])
+        devices.append(Device.objects.get_or_create(name="Device6", defaults={"ipv6_address": "2001:db8:3::102", "connected_to": router3})[0])
 
-        return {"routers": [router1, router2], "devices": [device1, device2]}
+        # Retornando os dados da rede
+        return {"routers": [router1, router2, router3, router4], "devices": devices}
 
     except IntegrityError as e:
         print(f"Erro de integridade: {e}")

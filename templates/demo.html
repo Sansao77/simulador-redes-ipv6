@@ -1,57 +1,156 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Topologia de Rede</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demonstração de Redes IPv6</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <style>
-        .node circle {
-            fill: #00ff00;
+        /* Estilos básicos */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 0;
         }
-        .link {
-            stroke: #aaa;
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .legend {
+            margin-top: 20px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+        }
+        #network-graph {
+            margin: 20px auto;
+            display: block;
+            border: 1px solid #ccc;
+        }
+        .button-container {
+            text-align: center;
+            margin-top: 30px;
+        }
+        .button-container button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .button-container button:hover {
+            background-color: #45a049;
         }
     </style>
 </head>
 <body>
-    <h1>Topologia de Rede</h1>
-    <svg width="600" height="400"></svg>
+    <h1>Demonstração de Redes IPv6</h1>
+    
+    <!-- Legenda -->
+    <div class="legend">
+        <h2>Legenda:</h2>
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: black;"></div>
+            <span>Dispositivo</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: green;"></div>
+            <span>Roteador</span>
+        </div>
+    </div>
+
+    <!-- Gráfico -->
+    <svg id="network-graph" width="800" height="600"></svg>
+
+    <!-- Botão para voltar à página de simulação -->
+    <div class="button-container">
+        <a href="{% url 'simulate' %}">
+            <button>Voltar à Simulação</button>
+        </a>
+    </div>
 
     <script>
+        // Dados dos nós (roteadores e dispositivos) e links
         const nodes = [
-            { id: "Device1" },
-            { id: "Router1" },
-            { id: "Router2" },
-            { id: "Device2" }
+            { id: "Router1", type: "router" },
+            { id: "Router2", type: "router" },
+            { id: "Router3", type: "router" },
+            { id: "Router4", type: "router" },
+            { id: "Device1", type: "device" },
+            { id: "Device2", type: "device" },
+            { id: "Device3", type: "device" },
+            { id: "Device4", type: "device" },
+            { id: "Device5", type: "device" },
+            { id: "Device6", type: "device" },
         ];
 
         const links = [
-            { source: "Device1", target: "Router1" },
             { source: "Router1", target: "Router2" },
-            { source: "Router2", target: "Device2" }
+            { source: "Router2", target: "Router3" },
+            { source: "Router3", target: "Router4" },
+            { source: "Router4", target: "Router1" },
+            { source: "Router2", target: "Router4" },
+            { source: "Device1", target: "Router1" },
+            { source: "Device2", target: "Router2" },
+            { source: "Device3", target: "Router3" },
+            { source: "Device4", target: "Router4" },
+            { source: "Device5", target: "Router1" },
+            { source: "Device6", target: "Router3" },
         ];
 
-        const svg = d3.select("svg");
-        const width = svg.attr("width");
-        const height = svg.attr("height");
+        // Configurando o gráfico com D3.js
+        const svg = d3.select("#network-graph");
+        const width = +svg.attr("width");
+        const height = +svg.attr("height");
 
         const simulation = d3.forceSimulation(nodes)
-            .force("link", d3.forceLink(links).id(d => d.id).distance(100))
-            .force("charge", d3.forceManyBody().strength(-200))
+            .force("link", d3.forceLink(links).id(d => d.id).distance(150))
+            .force("charge", d3.forceManyBody().strength(-300))
             .force("center", d3.forceCenter(width / 2, height / 2));
 
+        // Desenhando links
         const link = svg.append("g")
+            .attr("stroke", "#999")
+            .attr("stroke-opacity", 0.6)
             .selectAll("line")
             .data(links)
-            .join("line")
-            .attr("class", "link");
+            .enter()
+            .append("line")
+            .attr("stroke-width", 2);
 
+        // Desenhando nós
         const node = svg.append("g")
+            .attr("stroke", "#fff")
+            .attr("stroke-width", 1.5)
             .selectAll("circle")
             .data(nodes)
-            .join("circle")
+            .enter()
+            .append("circle")
             .attr("r", 10)
-            .attr("class", "node");
+            .attr("fill", d => d.type === "router" ? "green" : "black") // Cor baseada no tipo
+            .call(drag(simulation));
 
+        // Adicionando rótulos aos nós
+        const labels = svg.append("g")
+            .selectAll("text")
+            .data(nodes)
+            .enter()
+            .append("text")
+            .attr("x", 12)
+            .attr("y", 3)
+            .text(d => d.id)
+            .style("font-size", "12px")
+            .style("fill", "#333");
+
+        // Atualizando posições em cada tick
         simulation.on("tick", () => {
             link
                 .attr("x1", d => d.source.x)
@@ -62,7 +161,30 @@
             node
                 .attr("cx", d => d.x)
                 .attr("cy", d => d.y);
+
+            labels
+                .attr("x", d => d.x + 12)
+                .attr("y", d => d.y + 3);
         });
+
+        // Função de arrastar
+        function drag(simulation) {
+            return d3.drag()
+                .on("start", (event, d) => {
+                    if (!event.active) simulation.alphaTarget(0.3).restart();
+                    d.fx = d.x;
+                    d.fy = d.y;
+                })
+                .on("drag", (event, d) => {
+                    d.fx = event.x;
+                    d.fy = event.y;
+                })
+                .on("end", (event, d) => {
+                    if (!event.active) simulation.alphaTarget(0);
+                    d.fx = null;
+                    d.fy = null;
+                });
+        }
     </script>
 </body>
 </html>
